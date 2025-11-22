@@ -22,6 +22,6 @@ COPY modelo_red_neuronal.keras .
 COPY ciudades_regiones.csv .
 
 # Copiar dataset crudo (opcional, idealmente se monta como volumen)
-COPY weatherAUS.csv . 
+COPY primer_fila.csv . 
 
 CMD ["python", "inferencia.py"]

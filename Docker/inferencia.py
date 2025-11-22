@@ -5,7 +5,7 @@ import tensorflow as tf
 import os
 from sklearn.metrics import classification_report
 
-# Definir nombres de columnas finales exactas
+# Normalizamos los nombres de las columnas 
 COLS_FINALES = [
     'MinTemp', 'MaxTemp', 'Rainfall', 'Evaporation', 'Sunshine',
     'WindGustSpeed', 'WindSpeed9am', 'WindSpeed3pm', 'Humidity9am', 'Humidity3pm',
@@ -20,15 +20,9 @@ COLS_FINALES = [
 ]
 
 def preprocesar_datos(df_raw):
-    print("   -> Iniciando preprocesamiento de datos crudos...")
     df = df_raw.copy()
 
-    # 0. Eliminar target si existe
-    if 'RainTomorrow' in df.columns:
-        df = df.drop(columns=['RainTomorrow'])
-
-    # 1. Cargar y mergear regiones
-    # Nota: Como en predict() hacemos os.chdir al directorio del script, esto funcionará directo.
+    # Cargar y mergear regiones
     if os.path.exists('ciudades_regiones.csv'):
         regiones = pd.read_csv('ciudades_regiones.csv')
         if 'label' in regiones.columns:
@@ -49,7 +43,7 @@ def preprocesar_datos(df_raw):
         print("   [WARNING] No se encontró ciudades_regiones.csv en el directorio actual. Las regiones quedarán vacías.")
         df['region'] = np.nan
     
-    # 2. Fechas y Estaciones
+    # Creamos nuevas columnas
     df['Date'] = pd.to_datetime(df['Date'])
     df['month'] = df['Date'].dt.month
     df['Month_sin'] = np.sin(2 * np.pi * df['month']/12)
@@ -63,7 +57,7 @@ def preprocesar_datos(df_raw):
     
     df['season'] = df['month'].apply(get_season)
 
-    # 3. One Hot Encoding
+    # Codificamos las variables cualitativas
     for s in ['spring', 'summer', 'winter']:
         df[f'season_{s}'] = (df['season'] == s).astype(float)
         
@@ -80,7 +74,7 @@ def preprocesar_datos(df_raw):
     mask_null_raintoday = df['RainToday'].isna()
     df.loc[mask_null_raintoday, 'RainToday'] = df.loc[mask_null_raintoday, 'Rainfall'].apply(lambda x: 1 if x > 1 else 0)
 
-    # 5. Imputación Numérica
+    # Realizamos la imputación 
     cols_num = [
         "MinTemp", "MaxTemp", "Temp9am", "Rainfall", "Temp3pm", "Pressure9am",
         "Pressure3pm", "Humidity9am", "Humidity3pm", "WindGustSpeed", "Sunshine", 
@@ -91,7 +85,7 @@ def preprocesar_datos(df_raw):
             val = df[col].mean() if not df[col].isna().all() else 0
             df[col] = df[col].fillna(val)
 
-    # 6. Viento Cíclico
+    # Viento Cíclico
     wind_cols = ["WindGustDir", "WindDir9am", "WindDir3pm"]
     wind_dir_map = {
         'N': 0, 'NNE': 22.5, 'NE': 45, 'ENE': 67.5, 'E': 90, 'ESE': 112.5, 'SE': 135, 
@@ -104,7 +98,7 @@ def preprocesar_datos(df_raw):
             df[col + '_sin'] = np.sin(np.deg2rad(rad))
             df[col + '_cos'] = np.cos(np.deg2rad(rad))
 
-    # 7. Features Derivados
+    # Creamos nuevas columnas derivadas
     df['TempRange'] = df['MaxTemp'] - df['MinTemp']
     df['HumidityDiff'] = df['Humidity9am'] - df['Humidity3pm']
     df['PressureDiff'] = df['Pressure9am'] - df['Pressure3pm']
@@ -119,31 +113,23 @@ def preprocesar_datos(df_raw):
     return df[COLS_FINALES]
 
 def predict():
-    print("--- Servicio de Inferencia: Predicción de Lluvia en Australia ---")
-    
-    # --- 1. GESTIÓN DE RUTAS INTELIGENTE ---
     # Detectamos dónde está este archivo .py
     try:
-        # Esto funciona cuando ejecutas el archivo (F5, terminal)
         BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     except NameError:
-        # Esto funciona si ejecutas en celdas interactivas
         BASE_DIR = os.getcwd()
-        # Ajuste por si estás en la raíz y no en la carpeta docker
         if os.path.exists(os.path.join(BASE_DIR, 'docker')):
             BASE_DIR = os.path.join(BASE_DIR, 'docker')
 
     print(f"Directorio de trabajo establecido en: {BASE_DIR}")
     
-    # CAMBIAMOS EL DIRECTORIO DE TRABAJO A LA CARPETA DEL SCRIPT
-    # Esto es crucial para que 'preprocesar_datos' encuentre 'ciudades_regiones.csv'
-    # sin necesidad de pasarle rutas absolutas.
+    # Cambiamos el dir de trabajo a el dir del script para leer 'primer_fila.csv'
     os.chdir(BASE_DIR)
 
-    # Nombres de archivo (ahora relativos, ya que estamos en la carpeta correcta)
+    # Nombres de los archivos 
     MODEL_FILE = 'modelo_red_neuronal.keras'
     SCALER_FILE = 'scaler.joblib'
-    INPUT_FILE = 'weatherAUS.csv' 
+    INPUT_FILE = 'primer_fila.csv' 
     OUTPUT_FILE = 'predicciones.csv'
 
     # Validaciones
@@ -158,46 +144,27 @@ def predict():
         return
 
     try:
-        # 1. Cargar Artefactos
-        print(f"1. Cargando modelo y scaler...")
+        print(f"1. Cargando modelo y scaler")
         model = tf.keras.models.load_model(MODEL_FILE)
         scaler = joblib.load(SCALER_FILE)
 
-        # 2. Leer CSV Crudo
-        print(f"2. Leyendo datos desde '{INPUT_FILE}'...")
-        df_raw = pd.read_csv(INPUT_FILE) 
-        print(f"   Registros leídos: {len(df_raw)}")
+        # Leemos el CSV 
+        print(f"2. Leyendo datos desde '{INPUT_FILE}'")
+        df_raw = pd.read_csv(INPUT_FILE, nrows=1) 
 
-        # 3. Preprocesamiento
-        print("3. Ejecutando pipeline de preprocesamiento manual...")
-        # La función ahora está definida arriba, por lo que no dará error.
+        # Realizamos el preprocesamiento
+        print("3. Ejecutando pipeline de preprocesamiento manual")
         X_clean = preprocesar_datos(df_raw) 
         
-        # 4. Escalado
-        print("4. Escalando datos...")
+        # Escalamos los datos
+        print("4. Escalando datos")
         X_scaled = scaler.transform(X_clean)
         
-        # 5. Inferencia
-        print("5. Realizando predicciones...")
-        probs = model.predict(X_scaled, verbose=0).flatten()
-        preds = (probs > 0.5).astype(int)
-        
-        # 6. Reporte de Clasificación
-        if 'RainTomorrow' in df_raw.columns:
-            print("\n--- Evaluación del Modelo (Classification Report) ---")
-            y_true = df_raw['RainTomorrow'].map({'Yes': 1, 'No': 0})
-            mask_valid = ~y_true.isna()
-            
-            if mask_valid.sum() > 0:
-                print(classification_report(y_true[mask_valid], preds[mask_valid]))
-            else:
-                print("   [WARNING] No hay datos válidos en RainTomorrow.")
-
-        # 7. Guardar
-        df_raw['Prob_Lluvia'] = probs.round(4)
-        df_raw['Prediccion'] = ['Yes' if x == 1 else 'No' for x in preds]
-        df_raw.to_csv(OUTPUT_FILE, index=False)
-        print(f"\n>>> Resultados guardados en: {os.path.abspath(OUTPUT_FILE)}")
+        # Predecimos
+        print("5. Realizando predicción")
+        prob = model.predict(X_scaled, verbose=0).flatten()
+        pred = (prob > 0.5).astype(int)
+        print(f"Probabilidad: {prob[0]:.4f} → Predicción: {pred[0]}")
 
     except Exception as e:
         print(f"\nCRITICAL ERROR: {e}")
