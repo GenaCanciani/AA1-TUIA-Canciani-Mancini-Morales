@@ -123,13 +123,13 @@ def predict():
 
     print(f"Directorio de trabajo establecido en: {BASE_DIR}")
     
-    # Cambiamos el dir de trabajo a el dir del script para leer 'primer_fila.csv'
+    # Cambiamos el dir de trabajo a el dir del script para leer el Inpup File
     os.chdir(BASE_DIR)
 
     # Nombres de los archivos 
     MODEL_FILE = 'modelo_red_neuronal.keras'
     SCALER_FILE = 'scaler.joblib'
-    INPUT_FILE = 'primer_fila.csv' 
+    INPUT_FILE = 'weatherAUS.csv' 
     OUTPUT_FILE = 'predicciones.csv'
 
     # Validaciones
@@ -161,10 +161,10 @@ def predict():
         X_scaled = scaler.transform(X_clean)
         
         # Predecimos
-        print("5. Realizando predicción")
+        print("5. Realizando predicción\n")
         prob = model.predict(X_scaled, verbose=0).flatten()
         pred = (prob > 0.5).astype(int)
-        print(f"Probabilidad: {prob[0]:.4f} → Predicción: {pred[0]}")
+        print(f"Predicción de la primera fila:\nProbabilidad: {prob[0]:.4f} → Predicción: {pred[0]}")
 
     except Exception as e:
         print(f"\nCRITICAL ERROR: {e}")
