@@ -19,9 +19,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY inferencia.py .
 COPY scaler.joblib .
 COPY modelo_red_neuronal.keras .
+COPY weather_imputer.pkl .
 COPY ciudades_regiones.csv .
-
-# Copiar dataset crudo (opcional, idealmente se monta como volumen)
 COPY primer_fila.csv . 
+COPY weather_imputer.py .
 
 CMD ["python", "inferencia.py"]
