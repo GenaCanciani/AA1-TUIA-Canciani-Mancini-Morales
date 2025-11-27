@@ -3,7 +3,6 @@ import numpy as np
 import joblib
 import tensorflow as tf
 import os
-from sklearn.metrics import classification_report
 
 # Normalizamos los nombres de las columnas 
 COLS_FINALES = [
@@ -130,7 +129,7 @@ def predict():
     MODEL_FILE = 'modelo_red_neuronal.keras'
     SCALER_FILE = 'scaler.joblib'
     INPUT_FILE = 'weatherAUS.csv' 
-    OUTPUT_FILE = 'predicciones.csv'
+    
 
     # Validaciones
     if not os.path.exists(MODEL_FILE):
