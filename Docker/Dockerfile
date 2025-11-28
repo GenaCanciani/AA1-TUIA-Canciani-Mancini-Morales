@@ -17,11 +17,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copiar Scripts y Binarios
 COPY inferencia.py .
-COPY scaler.joblib .
-COPY modelo_red_neuronal.keras .
-COPY ciudades_regiones.csv .
 
-# Copiar dataset crudo (opcional, idealmente se monta como volumen)
-COPY primer_fila.csv . 
+# COPY
+COPY pipeline.py .                 
+COPY pipeline_completo.pkl .       
+COPY input_ejemplo.csv .           
+COPY modelo_red_neuronal.keras .
+
 
 CMD ["python", "inferencia.py"]
