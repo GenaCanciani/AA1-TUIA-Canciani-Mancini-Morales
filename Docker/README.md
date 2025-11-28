@@ -14,7 +14,8 @@ Este directorio contiene los archivos necesarios para construir y ejecutar un co
 
 ## Instrucciones de Ejecución
 
-**Requisitos previos:** Tener Docker Desktop o Docker Engine instalado y corriendo.
+**Requisitos previos:** Tener Docker Desktop o Docker Engine instalado y corriendo. En la terminal y desde la carpeta de Docker,
+ejecuta el comando pip install -r requirements.txt para descargar las librerías necesarias.
 
 ### 1. Construir la Imagen Docker
 

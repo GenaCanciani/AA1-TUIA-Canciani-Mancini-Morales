@@ -13,7 +13,6 @@ def predict():
     # rutas 
     PIPELINE_FILE = 'pipeline_completo.pkl'
     MODEL_FILE = 'modelo_red_neuronal.keras'
-    # Este archivo lo debes poner tú en la carpeta o pasarlo al docker run
     INPUT_FILE = 'input_ejemplo.csv' 
 
     # Carga de pipeline completo
