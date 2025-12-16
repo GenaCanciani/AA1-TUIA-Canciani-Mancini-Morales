@@ -1,0 +1,28 @@
+FROM python:3.10-slim
+
+# Configuración de entorno
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+WORKDIR /app
+
+# Dependencias de sistema
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Dependencias Python
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiar Scripts y Binarios
+COPY inferencia.py .
+
+# COPY
+COPY pipeline.py .                 
+COPY pipeline_completo.pkl .       
+COPY input_ejemplo.csv .           
+COPY modelo_red_neuronal.keras .
+
+
+CMD ["python", "inferencia.py"]
